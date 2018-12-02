@@ -5,17 +5,18 @@
 #include <vector>
 
 #ifndef LIGHT_SpecularPower
-#define LIGHT_SpecularPower 1.f
+#define LIGHT_SpecularPower 0.3f
 #endif
 #ifndef LIGHT_MatSpecularIntensity
-#define LIGHT_MatSpecularIntensity 0.7f
+#define LIGHT_MatSpecularIntensity 0.2f
 #endif
 
 enum IlluminationType {
     NoIllumination,
     LambertIllumination,
     GuroIllumination,
-    FongIllumination
+    FongIllumination,
+    TrueFongIllumination
 };
 
 class Lamp: public MoveObject {

@@ -11,7 +11,7 @@ LineX::LineX(int x1, int x2, float z1, float z2, sf::Vector3f worldBeg, sf::Vect
     this->z2 = z2;
     this->worldBeg = worldBeg;
     this->worldEnd = worldEnd;
-};
+}
 
 LineGuroX::LineGuroX(int x1, int x2, float z1, float z2, sf::Vector3f worldBeg, sf::Vector3f worldEnd)
 {
@@ -21,7 +21,17 @@ LineGuroX::LineGuroX(int x1, int x2, float z1, float z2, sf::Vector3f worldBeg, 
     this->z2 = z2;
     this->worldBeg = worldBeg;
     this->worldEnd = worldEnd;
-};
+}
+
+LineFongX::LineFongX( int x1, int x2, float z1, float z2, sf::Vector3f worldBeg, sf::Vector3f worldEnd)
+{
+    this->x1 = x1;
+    this->x2 = x2;
+    this->z1 = z1;
+    this->z2 = z2;
+    this->worldBeg = worldBeg;
+    this->worldEnd = worldEnd;
+}
 
 ZBuffer::ZBuffer(int width, int height)
 {
@@ -163,6 +173,40 @@ void line(GuroDot beg, GuroDot end, std::list<GuroDot>& result)
     }
 }
 
+void line(FongDot beg, FongDot end, std::list<FongDot>& result)
+{
+    bool steep = abs(end.cam.y - beg.cam.y) > abs(end.cam.x - beg.cam.x);
+    if (steep) {
+        std::swap(beg.cam.x, beg.cam.y);
+        std::swap(end.cam.x, end.cam.y);
+    }
+    if (beg.cam.x > end.cam.x) {
+        std::swap(beg, end);
+    }
+    int dx = end.cam.x - beg.cam.x;
+    int dy = abs(end.cam.y - beg.cam.y);
+    int error = dx / 2;
+    int ystep = (beg.cam.y < end.cam.y) ? 1 : -1;
+    int y = int(beg.cam.y + 0.5);
+    float z = beg.cam.z;
+    float zstep = (end.cam.z-beg.cam.z) / (end.cam.x-beg.cam.x);
+    sf::Vector3f delta = (end.world - beg.world) / (end.cam.x - beg.cam.x);
+    sf::Vector3f worldPoint = beg.world;
+    sf::Vector3f deltaNormal = (end.normal - beg.normal) / (end.cam.x - beg.cam.x);
+    sf::Vector3f curNormal = beg.normal;
+    for (int x = int(beg.cam.x + 0.5); x <= int(end.cam.x + 0.5); x++, z+=zstep, worldPoint+=delta)
+    {
+        sf::Vector3f camPoint(steep ? y : x, steep ? x : y, z);
+        result.push_back(FongDot(worldPoint ,camPoint, curNormal));
+        error -= dy;
+        if (error < 0) {
+            y += ystep;
+            error += dx;
+        }
+        curNormal += deltaNormal;
+    }
+}
+
 void drawLine(sf::Vector3f beg, sf::Vector3f end, sf::Image& image, ZBuffer& zbuffer, sf::Color color)
 {
     std::list<sf::Vector3f> dotList;
@@ -193,6 +237,20 @@ void interpolateLine(GuroDot beg, GuroDot end, sf::Image& image, ZBuffer& zbuffe
             colorVec = colorVec + intens[i];
         }
         sf::Color color(std::min(colorVec.x, 255.f), std::min(colorVec.y, 255.f), std::min(colorVec.z, 255.f));
+        if(isValidPoint(point->cam, image, zbuffer))
+            image.setPixel( point->cam.x, point->cam.y, color);
+    }
+}
+
+void internormalLine(FongDot beg, FongDot end, sf::Image& image, ZBuffer& zbuffer)
+{
+    std::list<FongDot> dotList;
+    line(beg, end, dotList);
+    std::list<FongDot>::iterator point;
+    for(point = dotList.begin(); point!=dotList.end();point++) 
+    {
+        sf::Vector3f normal = point->normal;
+        sf::Color color = Lamp::calcSumLight(point->world, normal);
         if(isValidPoint(point->cam, image, zbuffer))
             image.setPixel( point->cam.x, point->cam.y, color);
     }
@@ -229,6 +287,19 @@ void addBorderLine(GuroDot beg, GuroDot end, std::map<int, LineGuroX>& lines)
     std::list<GuroDot> dotList;
     line(beg, end, dotList);
     std::list<GuroDot>::iterator point;
+    for(point = dotList.begin(); point!=dotList.end();point++) 
+    {
+        addBorderPixel(*point, lines);
+    }
+    sf::Vector3f lastCamPoint(int(end.cam.x + 0.5), int(end.cam.y + 0.5), end.cam.z);
+    addBorderPixel(end, lines);
+}
+
+void addBorderLine(FongDot beg, FongDot end, std::map<int, LineFongX>& lines)
+{
+    std::list<FongDot> dotList;
+    line(beg, end, dotList);
+    std::list<FongDot>::iterator point;
     for(point = dotList.begin(); point!=dotList.end();point++) 
     {
         addBorderPixel(*point, lines);
@@ -297,6 +368,35 @@ void addBorderPixel(GuroDot point, std::map<int, LineGuroX>& lines)
     }
 }
 
+void addBorderPixel(FongDot point, std::map<int, LineFongX>& lines)
+{
+    int x = static_cast<int>(point.cam.x+0.5);
+    int y = static_cast<int>(point.cam.y+0.5);
+    float z = point.cam.z;
+    std::map<int, LineFongX>::iterator it;
+    it = lines.find(y);
+    if(it != lines.end()) {
+        LineFongX line = it->second;
+        if(x < line.x1) {
+            line.x1 = x;
+            line.z1 = z;
+            line.worldBeg = point.world;
+            line.begNormal = point.normal;
+        } else if( x > line.x2) {
+            line.x2 = x;
+            line.z2 = z;
+            line.worldEnd = point.world;
+            line.endNormal = point.normal;
+        }
+        lines[y] = line;
+    } else {
+        LineFongX line(x, x, z, z, point.world, point.world);
+        line.begNormal = point.normal;
+        line.endNormal = point.normal;
+        lines[y] = line;
+    }
+}
+
 void shadeFace(sf::Vector3f* worldFace,sf::Vector3f* camFace, sf::Image& image, ZBuffer& zbuffer)
 {
     sf::Vector2f vec1(camFace[1].x-camFace[0].x, camFace[1].y-camFace[0].y);
@@ -312,6 +412,23 @@ void shadeFace(sf::Vector3f* worldFace,sf::Vector3f* camFace, sf::Image& image, 
     addBorderLine(face[2], face[0], lines);
 
     shadeLambFong(lines, worldFace, image, zbuffer);
+}
+
+void shadeFongFace(sf::Vector3f* worldFace,sf::Vector3f* camFace, sf::Vector3f* normals, sf::Image& image, ZBuffer& zbuffer)
+{
+    sf::Vector2f vec1(camFace[1].x-camFace[0].x, camFace[1].y-camFace[0].y);
+    sf::Vector2f vec2(camFace[2].x-camFace[1].x, camFace[2].y-camFace[1].y);
+    float z = vec1.x * vec2.y - vec2.x * vec1.y;
+    if(z > 0)
+        return;
+    
+    std::map<int, LineFongX> lines;
+    FongDot face[] = {FongDot(worldFace[0], camFace[0], normals[0]), FongDot(worldFace[1], camFace[1], normals[1]), FongDot(worldFace[2], camFace[2], normals[2])};
+    addBorderLine(face[0], face[1], lines);
+    addBorderLine(face[1], face[2], lines);
+    addBorderLine(face[2], face[0], lines);
+
+    shadeFong(lines, worldFace, image, zbuffer);
 }
 
 void shadeVertex(sf::Vector3f* worldFace,sf::Vector3f* camFace, std::vector<Vector4f> *intens, sf::Image& image, ZBuffer& zbuffer)
@@ -346,6 +463,17 @@ void shadeLambFong(std::map<int, LineX>& lines, sf::Vector3f* worldFace, sf::Ima
         Dot3D beg(lin.worldBeg, sf::Vector3f(lin.x1, it->first, lin.z1));
         Dot3D end(lin.worldEnd, sf::Vector3f(lin.x2, it->first, lin.z2));
         shadeLine(beg, end, image, zbuffer, normal);
+    }
+}
+
+void shadeFong(std::map<int, LineFongX>& lines, sf::Vector3f* worldFace, sf::Image& image, ZBuffer& zbuffer)
+{
+    std::map<int, LineFongX>::iterator it;;
+    for(it = lines.begin(); it != lines.end(); it++) {
+        LineFongX lin = it->second;
+        FongDot beg(lin.worldBeg, sf::Vector3f(lin.x1, it->first, lin.z1), lin.begNormal);
+        FongDot end(lin.worldEnd, sf::Vector3f(lin.x2, it->first, lin.z2), lin.endNormal);
+        internormalLine(beg, end, image, zbuffer);
     }
 }
 

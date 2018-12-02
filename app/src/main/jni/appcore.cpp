@@ -25,7 +25,7 @@ void AppCore::run()
     float lastTime = 0;
     float lastPrintTime = 0;
 
-    Model* figure = new Icosahedron();
+    Model* figure = new Hexahedron();
 
     float aRot = 0.5f, bRot = 1.0f;
 
@@ -40,7 +40,10 @@ void AppCore::run()
     
     Lamp* lamp1 = new Lamp(sf::Vector3f(0.f, 0.0f, 1.5f), 10.f, sf::Color::Red);
     Lamp* lamp2 = new Lamp(sf::Vector3f(-1.5f, 0.f, 0.f), 10.f, sf::Color::Green);
-    Lamp* lamp3 = new Lamp(sf::Vector3f(0.f, -1.50f, 0.f), 10.f, sf::Color::Blue);
+    Lamp* lamp3 = new Lamp(sf::Vector3f(0.f, -1.5f, 0.f), 10.f, sf::Color::Blue);
+    // Lamp* lamp1 = new Lamp(sf::Vector3f(0.f, 0.0f, 1.5f), 10.f, sf::Color::White);
+    // Lamp* lamp2 = new Lamp(sf::Vector3f(-1.5f, 0.f, 0.f), 10.f, sf::Color::White);
+    // Lamp* lamp3 = new Lamp(sf::Vector3f(0.f, -1.5f, 0.f), 10.f, sf::Color::White);
     
     sf::Texture texture;
     sf::Sprite sprite(texture);
@@ -176,11 +179,13 @@ void AppCore::run()
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) { deltaCam += sf::Vector2i(-2, 0); }
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) { deltaCam += sf::Vector2i(0, 2); }
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) { deltaCam += sf::Vector2i(0, -2);}
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad0)) { Lamp::illuminationType = NoIllumination;}
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad1)) { Lamp::illuminationType = LambertIllumination;}
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad2)) { Lamp::illuminationType = GuroIllumination;}
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad3)) { Lamp::illuminationType = FongIllumination;}
-
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1)) { Lamp::illuminationType = NoIllumination;}
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2)) { Lamp::illuminationType = LambertIllumination;}
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3)) { Lamp::illuminationType = GuroIllumination;}
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4)) { Lamp::illuminationType = FongIllumination;}
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num5)) { Lamp::illuminationType = TrueFongIllumination;}
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num6)) { MoveObject::isAutoMove = !MoveObject::isAutoMove;}
+        
         if (active)
         {
             float newArot = aRot + deltaCam.y / 30.0f;
@@ -253,7 +258,7 @@ void AppCore::drawFPS(float fps, sf::Text& text)
     ss << fps;
     text.setString(ss.str());
     text.setCharacterSize(24); // in pixels, not points!
-    text.setFillColor(sf::Color::Red);
+    //text.setFillColor(sf::Color::Red);
     //text.setStyle(sf::Text::Bold | sf::Text::Underlined);
     
 }

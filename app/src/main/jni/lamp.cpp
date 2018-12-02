@@ -7,10 +7,10 @@ Lamp::Lamp(sf::Vector3f pos, float rad, sf::Color col) : MoveObject(pos, rad)
 {
     color = sf::Vector3f(col.r, col.g, col.b);
     lamps.push_back(this);
-    intensity = sf::Vector2f(0.1f, 0.4f);
-    attenuation = sf::Vector2f(0.1f, 0.05f);
+    intensity = sf::Vector2f(0.4f, 0.5f);
+    attenuation = sf::Vector2f(0.1f, 0.1f);
     roundColor = col;
-    radius = 5.f;
+    radius = 15.f;
     radius2 = radius * radius;
 
 }
@@ -30,7 +30,7 @@ sf::Color Lamp::calcSumLight(sf::Vector3f worldPos, sf::Vector3f normal)
     std::vector<Lamp*>::iterator it;
     Vector4f col;
     for(it = lamps.begin(); it != lamps.end(); it++) {
-        if(IsLit(normal, worldPos, (*it)->position))
+        if(illuminationType == TrueFongIllumination ||  IsLit(normal, worldPos, (*it)->position))
             col = col + (*it)->calcPointLight(worldPos, normal);
     }
     return sf::Color(std::min(col.x, 255.f), std::min(col.y, 255.f), std::min(col.z, 255.f));
@@ -50,6 +50,11 @@ Vector4f Lamp::fongCalcPointLight(sf::Vector3f worldPos, sf::Vector3f normal)
 
     float attenuation = 1.0 + this->attenuation.x * dist + this->attenuation.y * dist2;
     attenuation = std::max(1.f, attenuation);
+
+    // color.x = 128 + normal.x*128;
+    // color.y = 128 + normal.y*128;
+    // color.z = 128 + normal.z*128;
+    // return color;
 
     return color / attenuation;
 }
@@ -75,7 +80,7 @@ Vector4f Lamp::calcLightInternal(sf::Vector3f lightDirection, sf::Vector3f world
         }
     }
 
-    return (diffuseColor + specularColor);
+    return (ambientColor + diffuseColor);
 }
 
 Vector4f Lamp::lambertCalcPointLight(sf::Vector3f worldPos, sf::Vector3f normal)
@@ -89,10 +94,10 @@ Vector4f Lamp::lambertCalcPointLight(sf::Vector3f worldPos, sf::Vector3f normal)
     lightDirection = Normalize(lightDirection);
     Vector4f ambientColor = Vector4f(color, 1.f) * intensity.x;
     float diffuseFactor = Dot(normal, -lightDirection);
-    Vector4f diffuseColor = Vector4f(color, 1.0) * intensity.y * diffuseFactor;
+    Vector4f diffuseColor = Vector4f(color, 1.0) * intensity.y * 2.f * diffuseFactor;
     float attenuation = 1.0 + this->attenuation.x * dist + this->attenuation.y * dist2;
     attenuation = std::max(1.f, attenuation);
-    return diffuseColor / attenuation;
+    return ( diffuseColor) / attenuation;
 }
 
 // vec4 calcDirectionalLight(DirectionalLight light, sf::Vector3f worldPos, sf::Vector3f normal) {
@@ -113,6 +118,8 @@ Vector4f Lamp::calcPointLight(sf::Vector3f worldPos, sf::Vector3f normal) {
         case GuroIllumination:
             return fongCalcPointLight(worldPos, normal);
         case FongIllumination:
+            return fongCalcPointLight(worldPos, normal);
+        case TrueFongIllumination:
             return fongCalcPointLight(worldPos, normal);
     }
 }

@@ -1,5 +1,7 @@
 #include "moveobject.hpp"
 
+bool MoveObject::isAutoMove = false;
+
 MoveObject::MoveObject(sf::Vector3f pos, float rad)
 {
     position = pos;
@@ -40,6 +42,17 @@ void MoveObject::render(Matrix4& vp, sf::Image& image, ZBuffer& zbuffer)
         position = screenToWorld(newScreenPos, vp, size, wKoef);
         isMoved = false;
         isHidden = false;
+    }
+    if(MoveObject::isAutoMove) {
+        static sf::Clock clock;
+        float d = 0.01f;
+        float currentTime = clock.getElapsedTime().asSeconds();
+        float aRot = (roundColor.g + roundColor.b) + ((roundColor.g + roundColor.b) * currentTime*d);
+        float bRot = (roundColor.g/2.f + roundColor.b) + (roundColor.r * currentTime*d);
+        float rad = 3.f;
+        position.x = rad * cos(aRot) * cos(bRot);
+        position.y = rad * sin(aRot);
+        position.z= -rad * cos(aRot) * sin(bRot);
     }
     buildLines(vp, size);
     #ifndef ENABLE_ZBUFFER

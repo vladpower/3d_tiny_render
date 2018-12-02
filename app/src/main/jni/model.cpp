@@ -8,6 +8,59 @@ Model::Model()
     models.push_back(this);
 }
 
+int Model::findIndex(sf::Vector3f v) {
+    for(int i=0;i<verts.size();i++) {
+        if(verts[i] == v)
+            return i;
+    }
+    return -1;
+}
+
+void Model::addPolygon(sf::Vector3f a, sf::Vector3f b, sf::Vector3f c, sf::Vector3f d)
+{
+    addTriangle(a,b,c);
+    if(c!=d) {
+        addTriangle(c,d,a);
+    }
+}
+
+void Model::addPolygon(int a, int b, int c, int d)
+{
+    addTriangle(a,b,c);
+    if(c!=d) {
+        addTriangle(c,d,a);
+    }
+}
+
+void Model::addTriangle(int i, int j, int k)
+{
+    edges.push_back(sf::Vector2i(i,j));
+    edges.push_back(sf::Vector2i(j,k));
+    edges.push_back(sf::Vector2i(k,i));
+    faces.push_back(sf::Vector3i(i,j,k));
+}
+
+void Model::addTriangle(sf::Vector3f a, sf::Vector3f b, sf::Vector3f c)
+{
+    int i,j,k;
+    i = findIndex(a);
+    j = findIndex(b);
+    k = findIndex(c);
+    if(i<0) {
+        verts.push_back(a);
+        i=verts.size()-1;
+    }
+    if(j<0) {
+        verts.push_back(b);
+        j=verts.size()-1;
+    }
+    if(k<0) {
+        verts.push_back(c);
+        k=verts.size()-1;
+    }
+    addTriangle(i, j, k);
+}
+
 void Model::render(Matrix4& vp, sf::Image& image, ZBuffer& zbuffer)
 {
     dots.clear();
@@ -35,6 +88,8 @@ void Model::render(Matrix4& vp, sf::Image& image, ZBuffer& zbuffer)
     } else {
         if(Lamp::illuminationType == GuroIllumination) {
             shadeVerts(image, zbuffer);
+        } else if(Lamp::illuminationType == TrueFongIllumination) {
+            shadeFongFaces(image, zbuffer);
         } else {
             shadeFaces(image, zbuffer);
         }
@@ -50,6 +105,29 @@ void Model::shadeFaces(sf::Image& image, ZBuffer& zbuffer)
         sf::Vector3f camFace[] = {dots[it->x].toVector3(), dots[it->y].toVector3(), dots[it->z].toVector3()};
         shadeFace(worldFace, camFace, image, zbuffer);
     }
+}
+
+void Model::shadeFongFaces(sf::Image& image, ZBuffer& zbuffer)
+{
+    std::vector<sf::Vector3f> normalsVerts(verts.size(), sf::Vector3f(0.f,0.f,0.f));
+    
+    for (std::vector<sf::Vector3i>::iterator it=faces.begin(); it != faces.end(); ++it)
+    {
+        sf::Vector3f worldFace[] = {verts[it->x], verts[it->y], verts[it->z]};
+        sf::Vector3f normal = GetNormal(worldFace);
+        normalsVerts[it->x] += normal*0.5f;
+        normalsVerts[it->y] += normal;
+        normalsVerts[it->z] += normal*0.5f;
+    }
+
+    for (std::vector<sf::Vector3i>::iterator it=faces.begin(); it != faces.end(); ++it)
+    {
+        sf::Vector3f worldFace[] = {verts[it->x], verts[it->y], verts[it->z]};
+        sf::Vector3f camFace[] = {dots[it->x].toVector3(), dots[it->y].toVector3(), dots[it->z].toVector3()};
+        sf::Vector3f normals[] = {normalsVerts[it->x], normalsVerts[it->y], normalsVerts[it->z]};
+        shadeFongFace(worldFace, camFace, normals, image, zbuffer);
+    }
+
 }
 
 void Model::shadeVerts(sf::Image& image, ZBuffer& zbuffer)

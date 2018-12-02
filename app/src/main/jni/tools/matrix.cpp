@@ -77,7 +77,12 @@ sf::Vector3f operator-(sf::Vector3f vec)
 	return sf::Vector3f(-vec.x, -vec.y, -vec.z);
 }
 
-Vector4f operator/(Vector4f& a, float b)
+sf::Vector3f operator/(sf::Vector3f a, float b)
+{
+	return sf::Vector3f(a.x/b, a.y/b, a.z/b);
+}
+
+Vector4f operator/(Vector4f a, float b)
 {
 	return Vector4f(a.x/b, a.y/b, a.z/b, a.w/b);
 }

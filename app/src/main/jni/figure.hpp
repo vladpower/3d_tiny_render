@@ -28,4 +28,20 @@ protected:
 
 };
 
+class Sphere: public Model {
+private:
+    float rad = 1.17557f;
+
+    void addPoints();
+    void addEdges();
+    void addFaces();
+    void splitTriangles(int n);
+
+public:
+    Sphere();
+    ~Sphere();
+protected:
+
+};
+
 #endif //figure_hpp
