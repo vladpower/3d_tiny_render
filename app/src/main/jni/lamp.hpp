@@ -5,10 +5,10 @@
 #include <vector>
 
 #ifndef LIGHT_SpecularPower
-#define LIGHT_SpecularPower 0.3f
+#define LIGHT_SpecularPower 5.f
 #endif
 #ifndef LIGHT_MatSpecularIntensity
-#define LIGHT_MatSpecularIntensity 0.03f
+#define LIGHT_MatSpecularIntensity 0.5f
 #endif
 
 enum IlluminationType {
