@@ -77,10 +77,11 @@ Vector4f Lamp::calcLightInternal(sf::Vector3f lightDirection, sf::Vector3f world
         specularFactor = powf(specularFactor, LIGHT_SpecularPower);
         if (specularFactor > 0.0) {
             specularColor = Vector4f(color, 1.0) * (LIGHT_MatSpecularIntensity * specularFactor);
+            //specularColor = Vector4f(sf::Vector3f(255,255,255), 1.0) * (LIGHT_MatSpecularIntensity * specularFactor);
         }
     }
 
-    return (ambientColor + diffuseColor);
+    return (ambientColor + specularColor + diffuseColor);
 }
 
 Vector4f Lamp::lambertCalcPointLight(sf::Vector3f worldPos, sf::Vector3f normal)

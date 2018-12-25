@@ -8,7 +8,7 @@
 #define LIGHT_SpecularPower 0.3f
 #endif
 #ifndef LIGHT_MatSpecularIntensity
-#define LIGHT_MatSpecularIntensity 0.2f
+#define LIGHT_MatSpecularIntensity 0.03f
 #endif
 
 enum IlluminationType {
